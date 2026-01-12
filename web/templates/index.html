@@ -159,7 +159,6 @@
 <div class="summary">
     <h2>📊 Сводка сканирования</h2>
     <p><strong>Всего уязвимостей:</strong> {{ report.summary.total_vulnerabilities }}</p>
-    <p><strong>Средняя уверенность:</strong> {{ "%.2f"|format(report.summary.average_confidence) }}</p>
     <p><strong>Средний риск:</strong> {{ "%.2f"|format(report.summary.average_risk_score) }}</p>
     <p><strong>Высокорисковых находок:</strong> {{ report.summary.high_risk_count }}</p>
     
@@ -173,7 +172,13 @@
     {% if report.summary.strategies_used %}
     <h3>🔍 Использованные стратегии детекции:</h3>
     {% for strategy, count in report.summary.strategies_used.items() %}
-    <span class="strategy-badge">{{ strategy }}</span>
+    <span class="strategy-badge">
+        {% if strategy == 'pattern_based' %}Паттерн-матчинг
+        {% elif strategy == 'heuristic' %}Эвристический анализ
+        {% elif strategy == 'differential' %}Дифференциальный анализ
+        {% elif strategy == 'blind' %}Слепая детекция
+        {% else %}{{ strategy }}{% endif %}
+    </span>
     {% endfor %}
     {% endif %}
 </div>
@@ -184,22 +189,51 @@
     <h2>🚨 IDOR обнаружен на объекте #{{ r.id }}</h2>
     
     <div class="risk-score">
-        Уровень риска: {{ "%.2f"|format(r.risk_score) }} | Уверенность: {{ "%.2f"|format(r.confidence) }}
+        Уровень риска: {{ "%.2f"|format(r.risk_score) }}
     </div>
 
     <h3>🔍 Стратегии детекции:</h3>
     {% for strategy in r.strategies %}
-    <span class="strategy-badge">{{ strategy }}</span>
+    <span class="strategy-badge">
+        {% if strategy == 'pattern_based' %}Паттерн-матчинг
+        {% elif strategy == 'heuristic' %}Эвристический анализ
+        {% elif strategy == 'differential' %}Дифференциальный анализ
+        {% elif strategy == 'blind' %}Слепая детекция
+        {% else %}{{ strategy }}{% endif %}
+    </span>
     {% endfor %}
 
     <h3>🎯 Найденные уязвимости:</h3>
     {% for vuln in r.vulnerabilities %}
     <div class="vulnerability">
-        <strong>Тип:</strong> {{ vuln.type }}<br>
-        <strong>Уверенность:</strong> {{ "%.2f"|format(vuln.confidence) }}<br>
+        <strong>Тип:</strong> {{ vuln.type_ru or vuln.type }}<br>
         {% if vuln.evidence %}
         <strong>Доказательства:</strong>
-        <div class="evidence">{{ vuln.evidence | tojson(indent=2) }}</div>
+        <div class="evidence">
+            {% if vuln.type == 'Различие в размере контента' %}
+                <div style="background: #2a2a2a; padding: 10px; margin: 5px 0; border-radius: 5px;">
+                    <strong>🔍 Анализ размера контента:</strong><br>
+                    Базовый размер: {{ vuln.evidence.baseline_length | default('N/A') }} символов<br>
+                    Текущий размер: {{ vuln.evidence.current_length | default('N/A') }} символов<br>
+                    Различие: {{ vuln.evidence.difference | default('N/A') }} символов<br>
+                    <small style="color: #888;">Вывод: Обнаружено значительное различие в размере ответа, что может указывать на IDOR</small>
+                </div>
+            {% elif vuln.type == 'ID параметр в HTML' %}
+                <div style="background: #2a2a2a; padding: 10px; margin: 5px 0; border-radius: 5px;">
+                    <strong>🔍 Анализ HTML контента:</strong><br>
+                    Обнаружены параметры ID в HTML:<br>
+                    <code style="background: #333; padding: 2px 4px; border-radius: 3px;">{{ vuln.evidence.content_snippet | default('N/A') }}</code><br>
+                    <small style="color: #888;">Вывод: HTML содержит прямые ссылки на ID объектов, что является явным признаком IDOR</small>
+                </div>
+            {% else %}
+                <div style="background: #2a2a2a; padding: 10px; margin: 5px 0; border-radius: 5px;">
+                    <strong>🔍 Детальный анализ:</strong><br>
+                    <div style="font-family: monospace; font-size: 12px; background: #333; padding: 10px; border-radius: 3px; overflow-x: auto;">
+                        {{ vuln.evidence | tojson(indent=2) }}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
         {% endif %}
     </div>
     {% endfor %}
@@ -208,7 +242,13 @@
     <h3>📋 Сводка доказательств:</h3>
     <div class="evidence">
     {% for strategy, summary in r.evidence_summary.items() %}
-        <strong>{{ strategy }}:</strong> {{ summary }}<br>
+        <strong>
+        {% if strategy == 'pattern_based' %}Паттерн-матчинг
+        {% elif strategy == 'heuristic' %}Эвристический анализ
+        {% elif strategy == 'differential' %}Дифференциальный анализ
+        {% elif strategy == 'blind' %}Слепая детекция
+        {% else %}{{ strategy }}{% endif %}
+        </strong>: {{ summary }}<br>
     {% endfor %}
     </div>
     {% endif %}

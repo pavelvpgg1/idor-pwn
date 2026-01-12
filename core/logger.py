@@ -125,7 +125,7 @@ class ScanLogger:
     
     def vulnerability_found(self, object_id: int, vuln_type: str, confidence: float):
         """Найдена уязвимость"""
-        self.warning(f"🚨 Найдена уязвимость! Объект #{object_id}: {vuln_type} (уверенность: {confidence:.2f})", {
+        self.warning(f"🚨 Найдена уязвимость! Объект #{object_id}: {vuln_type} (уровень риска: {confidence:.2f})", {
             'object_id': object_id,
             'vulnerability_type': vuln_type,
             'confidence': confidence

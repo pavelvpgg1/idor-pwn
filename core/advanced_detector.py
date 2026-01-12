@@ -37,6 +37,38 @@ class AdvancedDetectionResult:
 class AdvancedIDORDetector:
     """Продвинутый детектор IDOR с использованием всех техник"""
     
+    # Словарь для перевода типов уязвимостей на русский
+    VULNERABILITY_TYPES_RU = {
+        'horizontal': 'Горизонтальный IDOR',
+        'vertical': 'Вертикальный IDOR', 
+        'context_dependent': 'Контекстно-зависимый IDOR',
+        'blind': 'Слепая детекция',
+        'pattern_based': 'Паттерн-матчинг',
+        'heuristic': 'Эвристический анализ',
+        'differential': 'Дифференциальный анализ',
+        'heuristic_anomaly': 'Эвристическая аномалия',
+        'content_size_difference': 'Различие в размере контента',
+        'html_id_parameter': 'ID параметр в HTML',
+        'privilege_escalation': 'Повышение привилегий',
+        'data_exposure': 'Раскрытие данных',
+        'auth_bypass': 'Обход аутентификации',
+        'functionality_access': 'Доступ к функционалу',
+        'blind_timing': 'Слепая детекция по времени отклика',
+        'blind_error': 'Слепая детекция по паттернам ошибок',
+        'blind_response_variance': 'Слепая детекция по вариативности ответов',
+        'blind_behavioral': 'Слепая детекция по поведению',
+        'blind_sequential': 'Слепая детекция по последовательным запросам',
+        'blind_side_channel': 'Слепая детекция по побочным каналам',
+        'timing_based': 'Слепая детекция по времени',
+        'error_pattern': 'Слепая детекция по паттернам ошибок',
+        'response_variance': 'Слепая детекция по вариативности ответов',
+        'unique_pattern': 'Уникальный паттерн',
+        'excessive_pattern': 'Частый паттерн',
+        'unique_response': 'Уникальный ответ',
+        'high_uniqueness': 'Высокая уникальность',
+        'blind_response_analysis': 'Анализ ответов слепой детекции'
+    }
+    
     def __init__(self, session_factory):
         self.session_factory = session_factory
         
@@ -180,20 +212,42 @@ class AdvancedIDORDetector:
                         content_diff = abs(current_data['content_length'] - baseline_data['content_length'])
                         if content_diff > 100:  # Значительное различие в размере контента
                             pattern_results.append({
-                                'type': 'content_size_difference',
+                                'type': self._translate_vulnerability_type('content_size_difference'),
+                                'type_ru': self._translate_vulnerability_type('content_size_difference'),  # Русский вариант
                                 'severity': 'medium',
-                                'description': f'Значительное различие в размере контента ({content_diff} символов)',
-                                'confidence': 0.6
+                                'description': f'значительное различие в размере контента ({content_diff} символов)',
+                                'confidence': 0.6,
+                                'evidence': {
+                                    'baseline_length': baseline_data['content_length'],
+                                    'current_length': current_data['content_length'],
+                                    'difference': content_diff
+                                }
                             })
                         
                         # Проверяем на наличие данных пользователя в контенте
                         if 'artist=' in current_data['content'] and 'id=' in current_data['content']:
+                            # Извлекаем фрагмент с ID параметрами
+                            import re
+                            id_matches = re.findall(r'[?&]artist=\d+|[?&]id=\d+', current_data['content'])
+                            content_snippet = ', '.join(id_matches[:3]) if id_matches else 'artist=X, id=Y'
+                            
                             pattern_results.append({
-                                'type': 'html_id_parameter',
+                                'type': self._translate_vulnerability_type('html_id_parameter'),
+                                'type_ru': self._translate_vulnerability_type('html_id_parameter'),  # Русский вариант
                                 'severity': 'high',
                                 'description': 'Обнаружены параметры ID в HTML контенте',
-                                'confidence': 0.8
+                                'confidence': 0.8,
+                                'evidence': {
+                                    'content_snippet': content_snippet,
+                                    'full_content_length': len(current_data['content']),
+                                    'id_parameters_found': len(id_matches)
+                                }
                             })
+                    
+                    # Обновляем типы уязвимостей русскими названиями
+                    for pattern in pattern_results:
+                        if 'type' in pattern and 'type_ru' not in pattern:
+                            pattern['type_ru'] = self._translate_vulnerability_type(pattern['type'])
                     
                     if pattern_results:
                         results[obj_id] = {
@@ -358,7 +412,7 @@ class AdvancedIDORDetector:
                         heuristics = obj_data['heuristics']
                         if heuristics['is_suspicious']:
                             vulnerabilities.append({
-                                'type': 'heuristic_anomaly',
+                                'type': self._translate_vulnerability_type('heuristic_anomaly'),
                                 'confidence': heuristics['confidence'],
                                 'evidence': heuristics
                             })
@@ -368,7 +422,7 @@ class AdvancedIDORDetector:
                     if 'differential' in obj_data:
                         diff = obj_data['differential']
                         vulnerabilities.append({
-                            'type': diff.vulnerability_type,
+                            'type': self._translate_vulnerability_type(diff.vulnerability_type),
                             'confidence': diff.confidence,
                             'evidence': diff.evidence
                         })
@@ -379,7 +433,7 @@ class AdvancedIDORDetector:
                     if 'blind_detections' in obj_data:
                         for blind_result in obj_data['blind_detections']:
                             vulnerabilities.append({
-                                'type': f'blind_{blind_result.method.value}',
+                                'type': self._translate_vulnerability_type(f'blind_{blind_result.method.value}'),
                                 'confidence': blind_result.confidence,
                                 'evidence': blind_result.evidence
                             })
@@ -397,7 +451,7 @@ class AdvancedIDORDetector:
                                             anomaly_obj_id = anomaly['object_id']
                                             if anomaly_obj_id == obj_id:
                                                 vulnerabilities.append({
-                                                    'type': f'blind_{blind_result.method.value}',
+                                                    'type': self._translate_vulnerability_type(f'blind_{blind_result.method.value}'),
                                                     'confidence': blind_result.confidence,
                                                     'evidence': blind_result.evidence
                                                 })
@@ -432,6 +486,10 @@ class AdvancedIDORDetector:
                 print(f"DEBUG: NOT creating result for obj_id {obj_id} - vulnerabilities: {len(vulnerabilities)}, confidence: {overall_confidence}")
         
         return combined_results
+    
+    def _translate_vulnerability_type(self, vuln_type: str) -> str:
+        """Переводит тип уязвимости на русский язык"""
+        return self.VULNERABILITY_TYPES_RU.get(vuln_type, vuln_type)
     
     def _generate_recommendations(self, vulnerabilities: List[Dict]) -> List[str]:
         """Генерирует рекомендации на основе найденных уязвимостей"""

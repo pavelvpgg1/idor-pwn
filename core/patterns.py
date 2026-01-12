@@ -255,7 +255,8 @@ class PatternMatcher:
                     'type': pattern.idor_type.value,
                     'confidence': confidence,
                     'details': details,
-                    'description': pattern.description
+                    'description': pattern.description,
+                    'type_ru': pattern.idor_type.value  # Добавляем русский вариант
                 })
         
         return results
