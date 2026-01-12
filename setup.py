@@ -192,27 +192,36 @@ def test_installation():
     # Тест импорта основных модулей
     test_script = """
 import sys
+import os
 sys.path.append('.')
+
+# Установка кодировки для Windows
+if sys.platform == 'win32':
+    import locale
+    try:
+        os.system('chcp 65001 >nul')
+    except:
+        pass
 
 try:
     from core.advanced_detector import AdvancedIDORDetector
     from auth.session import Session
     from core.patterns import PatternMatcher
-    print("✅ Основные модули импортированы успешно")
+    print("[OK] Основные модули импортированы успешно")
 except ImportError as e:
-    print(f"❌ Ошибка импорта: {e}")
+    print(f"[ERROR] Ошибка импорта: {e}")
     sys.exit(1)
 
 try:
     import flask
     import requests
     import yaml
-    print("✅ Внешние зависимости доступны")
+    print("[OK] Внешние зависимости доступны")
 except ImportError as e:
-    print(f"❌ Ошибка импорта зависимостей: {e}")
+    print(f"[ERROR] Ошибка импорта зависимостей: {e}")
     sys.exit(1)
 
-print("✅ Тестирование пройдено")
+print("[OK] Тестирование пройдено")
 """
     
     try:
