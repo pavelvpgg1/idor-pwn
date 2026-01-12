@@ -1,0 +1,14 @@
+target:
+  base_url: "http://127.0.0.1:5000"
+  endpoint: "/api/orders/{id}"
+  id_range: [1, 10]
+
+auth:
+  token: "token_user1"
+
+detection:
+  ownership_field: "owner_id"
+  current_user_id: 1
+
+output:
+  report_file: "idor_report.txt"

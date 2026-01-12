@@ -1,0 +1,56 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: #e5e7eb;
+}
+
+.container {
+    width: 90%;
+    margin: auto;
+}
+
+h1 {
+    color: #ef4444;
+}
+
+.subtitle {
+    color: #94a3b8;
+}
+
+.scan-btn {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 16px;
+    cursor: pointer;
+    margin: 20px 0;
+}
+
+.scan-btn:hover {
+    background: #dc2626;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    border: 1px solid #334155;
+    padding: 10px;
+}
+
+th {
+    background: #1e293b;
+}
+
+.vuln {
+    background: #3f1d1d;
+}
+
+pre {
+    white-space: pre-wrap;
+    font-size: 12px;
+}

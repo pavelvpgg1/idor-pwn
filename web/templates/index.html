@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Продвинутый IDOR Детектор</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #111; color: #eee; margin: 20px; }
+        button { padding: 10px 20px; font-size: 16px; background: #333; color: white; border: none; cursor: pointer; border-radius: 5px; }
+        button:hover { background: #555; }
+        input { padding: 8px; font-size: 14px; background: #222; color: white; border: 1px solid #555; border-radius: 3px; width: 300px; }
+        label { display: block; margin: 10px 0 5px 0; }
+        .form-group { margin: 15px 0; }
+        .card {
+            background: #1e1e1e;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 5px solid #ff4444;
+            border-radius: 5px;
+        }
+        .CRITICAL { color: #ff4444; border-color: #ff4444; }
+        .HIGH { color: #ff8800; border-color: #ff8800; }
+        .MEDIUM { color: #ffaa00; border-color: #ffaa00; }
+        .LOW { color: #8888ff; border-color: #8888ff; }
+        .summary {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .strategy-badge {
+            background: #444;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin: 2px;
+            display: inline-block;
+        }
+        .vulnerability {
+            background: #333;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+        .evidence {
+            font-family: monospace;
+            font-size: 12px;
+            background: #222;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+        .recommendations {
+            background: #2a4a2a;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+        .recommendations h4 {
+            color: #88ff88;
+            margin-top: 0;
+        }
+        .risk-score {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .config-section {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .config-section h3 {
+            margin-top: 0;
+            color: #88ff88;
+        }
+        .log-entry-error { border-left-color: #ff4444; }
+        .log-entry-warning { border-left-color: #ff8800; }
+        .log-entry-success { border-left-color: #44ff44; }
+        .log-entry-info { border-left-color: #4488ff; }
+        .log-entry-debug { border-left-color: #888888; }
+        .log-text-error { color: #ff4444; }
+        .log-text-warning { color: #ff8800; }
+        .log-text-success { color: #44ff44; }
+        .log-text-info { color: #4488ff; }
+        .log-text-debug { color: #888888; }
+        .log-container {
+            max-height: 400px;
+            overflow-y: auto;
+            background: #222;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid;
+        }
+        .log-timestamp {
+            color: #888;
+            font-size: 12px;
+        }
+        .log-details {
+            margin-left: 20px;
+            font-size: 12px;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+
+<h1>🛡️ Продвинутый Автоматический Детектор IDOR</h1>
+
+<form method="post">
+    <div class="config-section">
+        <h3>🎯 Настройки цели</h3>
+        
+        <div class="form-group">
+            <label for="target_url">Адрес цели (IP или домен):</label>
+            <input type="text" id="target_url" name="target_url" placeholder="http://127.0.0.1:5000" value="{{ request.form.target_url or 'http://127.0.0.1:5000' }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="endpoint">Эндпоинт для тестирования:</label>
+            <input type="text" id="endpoint" name="endpoint" placeholder="/api/orders/{id}" value="{{ request.form.endpoint or '/api/orders/{id}' }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="id_range_start">Диапазон ID (с):</label>
+            <input type="number" id="id_range_start" name="id_range_start" placeholder="1" value="{{ request.form.id_range_start or '1' }}" required style="width: 100px;">
+            
+            <label for="id_range_end" style="margin-left: 20px;">по:</label>
+            <input type="number" id="id_range_end" name="id_range_end" placeholder="10" value="{{ request.form.id_range_end or '10' }}" required style="width: 100px;">
+        </div>
+        
+        <h3>🔐 Аутентификация</h3>
+        
+        <div class="form-group">
+            <label for="auth_token">Токен аутентификации:</label>
+            <input type="text" id="auth_token" name="auth_token" placeholder="token_user1" value="{{ request.form.auth_token or 'token_user1' }}">
+        </div>
+        
+        <h3>🔍 Детекция</h3>
+        
+        <div class="form-group">
+            <label for="ownership_field">Поле владельца:</label>
+            <input type="text" id="ownership_field" name="ownership_field" placeholder="owner_id" value="{{ request.form.ownership_field or 'owner_id' }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="current_user_id">ID текущего пользователя:</label>
+            <input type="number" id="current_user_id" name="current_user_id" placeholder="1" value="{{ request.form.current_user_id or '1' }}" style="width: 100px;">
+        </div>
+    </div>
+    
+    <button type="submit">🚀 Запустить продвинутое сканирование</button>
+</form>
+
+{% if report and report.summary %}
+<div class="summary">
+    <h2>📊 Сводка сканирования</h2>
+    <p><strong>Всего уязвимостей:</strong> {{ report.summary.total_vulnerabilities }}</p>
+    <p><strong>Средняя уверенность:</strong> {{ "%.2f"|format(report.summary.average_confidence) }}</p>
+    <p><strong>Средний риск:</strong> {{ "%.2f"|format(report.summary.average_risk_score) }}</p>
+    <p><strong>Высокорисковых находок:</strong> {{ report.summary.high_risk_count }}</p>
+    
+    {% if report.summary.vulnerability_types %}
+    <h3>🎯 Типы уязвимостей:</h3>
+    {% for vuln_type, count in report.summary.vulnerability_types.items() %}
+    <span class="strategy-badge">{{ vuln_type }} ({{ count }})</span>
+    {% endfor %}
+    {% endif %}
+    
+    {% if report.summary.strategies_used %}
+    <h3>🔍 Использованные стратегии детекции:</h3>
+    {% for strategy, count in report.summary.strategies_used.items() %}
+    <span class="strategy-badge">{{ strategy }}</span>
+    {% endfor %}
+    {% endif %}
+</div>
+{% endif %}
+
+{% for r in results %}
+<div class="card {{ 'CRITICAL' if r.risk_score > 0.8 else 'HIGH' if r.risk_score > 0.6 else 'MEDIUM' if r.risk_score > 0.4 else 'LOW' }}">
+    <h2>🚨 IDOR обнаружен на объекте #{{ r.id }}</h2>
+    
+    <div class="risk-score">
+        Уровень риска: {{ "%.2f"|format(r.risk_score) }} | Уверенность: {{ "%.2f"|format(r.confidence) }}
+    </div>
+
+    <h3>🔍 Стратегии детекции:</h3>
+    {% for strategy in r.strategies %}
+    <span class="strategy-badge">{{ strategy }}</span>
+    {% endfor %}
+
+    <h3>🎯 Найденные уязвимости:</h3>
+    {% for vuln in r.vulnerabilities %}
+    <div class="vulnerability">
+        <strong>Тип:</strong> {{ vuln.type }}<br>
+        <strong>Уверенность:</strong> {{ "%.2f"|format(vuln.confidence) }}<br>
+        {% if vuln.evidence %}
+        <strong>Доказательства:</strong>
+        <div class="evidence">{{ vuln.evidence | tojson(indent=2) }}</div>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    {% if r.evidence_summary %}
+    <h3>📋 Сводка доказательств:</h3>
+    <div class="evidence">
+    {% for strategy, summary in r.evidence_summary.items() %}
+        <strong>{{ strategy }}:</strong> {{ summary }}<br>
+    {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if r.recommendations %}
+    <div class="recommendations">
+        <h4>💡 Рекомендации:</h4>
+        <ul>
+            {% for rec in r.recommendations %}
+            <li>{{ rec }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endfor %}
+
+{% if report and report.summary and report.top_recommendations %}
+<div class="summary">
+    <h2>🎯 Главные рекомендации по безопасности</h2>
+    <ol>
+        {% for rec in report.top_recommendations %}
+        <li>{{ rec }}</li>
+        {% endfor %}
+    </ol>
+</div>
+{% endif %}
+
+{% if logs %}
+<div class="summary">
+    <h2>📋 Лог процесса сканирования</h2>
+    
+    {% if progress %}
+    <div class="progress-info">
+        <h3>📊 Прогресс:</h3>
+        <p><strong>Обработано объектов:</strong> {{ progress.processed_objects }}/{{ progress.total_objects }} ({{ "%.1f"|format(progress.progress_percentage) }}%)</p>
+        <p><strong>Время выполнения:</strong> {{ "%.2f"|format(progress.elapsed_time) }} сек</p>
+        {% if progress.current_object %}
+        <p><strong>Текущий объект:</strong> #{{ progress.current_object }}</p>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    {% if log_summary %}
+    <div class="log-stats">
+        <h3>📈 Статистика логов:</h3>
+        <p><strong>Всего записей:</strong> {{ log_summary.total_logs }}</p>
+        {% for level, count in log_summary.level_counts.items() %}
+        <span class="strategy-badge">{{ level }}: {{ count }}</span>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <div class="log-entries">
+            <h3>🕐 Детальный лог:</h3>
+            <div class="log-container">
+            {% for log in logs %}
+            <div class="log-entry log-entry-{{ log.level }}">
+                <span class="log-timestamp">{{ "%.2f"|format(log.timestamp) }}s</span>
+                <span class="log-text-{{ log.level }}">
+                    [{{ log.level.upper() }}]
+                </span>
+                {{ log.message }}
+                {% if log.details %}
+                <div class="log-details">
+                    {% for key, value in log.details.items() %}
+                    {{ key }}: {{ value }}{% if not loop.last %} | {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            </div>
+        </div>
+</div>
+{% endif %}
+
+</body>
+</html>

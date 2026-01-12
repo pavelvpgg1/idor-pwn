@@ -1,0 +1,82 @@
+# Виртуальное окружение
+venv/
+env/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Логи
+logs/
+*.log
+
+# Данные и отчеты
+data/
+reports/
+examples/output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# LaTeX
+*.aux
+*.log
+*.toc
+*.out
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+
+# Временные файлы
+*.tmp
+*.temp
+
+# Документация (пока не в гите)
+docs/*.pdf
+docs/!(*.tex|*.bib|Makefile|build.*|README.md)
+
+# Переменные окружения
+.env
+.env.local
+.env.*.local
+
+# Тесты
+.coverage
+.pytest_cache/
+htmlcov/
+
+# База данных
+*.db
+*.sqlite3
+
+# Резервные копии
+*.bak
+*.backup
