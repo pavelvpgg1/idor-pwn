@@ -335,7 +335,7 @@ tail -f logs/development.log
 ## 📞 Контакты
 
 - **Автор:** Смирных Павел Ильич
-- **GitHub:** https://github.com/your-username
+- **GitHub:** https://github.com/pavelvpgg1
 - **Location:** г. Сургут, Россия
 
 ## 🙏 Благодарности
