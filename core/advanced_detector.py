@@ -124,8 +124,18 @@ class AdvancedIDORDetector:
                 self.logger.request_made('GET', endpoint, response.status_code, 
                                      float(response.elapsed.total_seconds()) if hasattr(response, 'elapsed') else 0.0)
                 
-                if response.status_code == 200 and hasattr(response, 'json'):
-                    baseline_data = response.json()
+                if response.status_code == 200:
+                    # Пробуем получить JSON, если не получается - используем HTML
+                    try:
+                        baseline_data = response.json()
+                    except:
+                        # Для HTML ответов используем текстовое содержимое
+                        baseline_data = {
+                            'status_code': response.status_code,
+                            'content_length': len(response.text),
+                            'content': response.text[:1000],  # Первые 1000 символов
+                            'headers': dict(response.headers)
+                        }
                     self.logger.info(f"📊 Установлен базовый объект для сравнения: #{obj_id}")
                     break
             except Exception as e:
@@ -148,11 +158,42 @@ class AdvancedIDORDetector:
                 self.logger.request_made('GET', endpoint, response.status_code, 
                                      float(response.elapsed.total_seconds()) if hasattr(response, 'elapsed') else 0.0)
                 
-                if response.status_code == 200 and hasattr(response, 'json'):
-                    current_data = response.json()
+                if response.status_code == 200:
+                    # Пробуем получить JSON, если не получается - используем HTML
+                    try:
+                        current_data = response.json()
+                    except:
+                        # Для HTML ответов используем текстовое содержимое
+                        current_data = {
+                            'status_code': response.status_code,
+                            'content_length': len(response.text),
+                            'content': response.text[:1000],  # Первые 1000 символов
+                            'headers': dict(response.headers)
+                        }
                     
                     # Применяем паттерны
                     pattern_results = self.pattern_matcher.analyze(current_data, baseline_data, context)
+                    
+                    # Для HTML ответов используем дополнительную логику
+                    if not pattern_results and isinstance(current_data, dict) and 'content' in current_data:
+                        # Проверяем на типичные признаки IDOR в HTML
+                        content_diff = abs(current_data['content_length'] - baseline_data['content_length'])
+                        if content_diff > 100:  # Значительное различие в размере контента
+                            pattern_results.append({
+                                'type': 'content_size_difference',
+                                'severity': 'medium',
+                                'description': f'Значительное различие в размере контента ({content_diff} символов)',
+                                'confidence': 0.6
+                            })
+                        
+                        # Проверяем на наличие данных пользователя в контенте
+                        if 'artist=' in current_data['content'] and 'id=' in current_data['content']:
+                            pattern_results.append({
+                                'type': 'html_id_parameter',
+                                'severity': 'high',
+                                'description': 'Обнаружены параметры ID в HTML контенте',
+                                'confidence': 0.8
+                            })
                     
                     if pattern_results:
                         results[obj_id] = {
