@@ -44,7 +44,7 @@ IDOR Pwn - это автоматизированный инструмент дл
 
 ```bash
 # Клонирование репозитория
-git clone https://github.com/your-username/idor-pwn.git
+git clone https://github.com/pavelvpgg1/idor-pwn.git
 cd idor-pwn
 
 # Автоматическая установка
@@ -55,7 +55,7 @@ python setup.py
 
 1. **Клонирование репозитория:**
 ```bash
-git clone https://github.com/your-username/idor-pwn.git
+git clone https://github.com/pavelvpgg1/idor-pwn.git
 cd idor-pwn
 ```
 
